@@ -15,6 +15,20 @@
       "when": 1745343432059,
       "tag": "0001_loud_silk_fever",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1745495034935,
+      "tag": "0002_organic_rocket_racer",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1745496056094,
+      "tag": "0003_demonic_christian_walker",
+      "breakpoints": true
     }
   ]
 }
