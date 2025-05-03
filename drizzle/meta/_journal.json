@@ -64,6 +64,13 @@
       "when": 1745663100675,
       "tag": "0008_little_patch",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1746264018564,
+      "tag": "0009_mighty_dragon_lord",
+      "breakpoints": true
     }
   ]
 }

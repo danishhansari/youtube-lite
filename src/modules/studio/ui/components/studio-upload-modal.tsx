@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { StudioUploader } from "./studio-uploader";
 import { useRouter } from "next/navigation";
 
-export const StudioUploadModel = () => {
+export const StudioUploadModal = () => {
   const router = useRouter();
   const utils = trpc.useUtils();
   const create = trpc.videos.create.useMutation({

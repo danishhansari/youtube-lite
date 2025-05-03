@@ -34,8 +34,11 @@ import {
   CopyCheckIcon,
   CopyIcon,
   Globe2Icon,
+  ImagePlusIcon,
   LockIcon,
   MoreVerticalIcon,
+  RotateCcwIcon,
+  SparklesIcon,
   TrashIcon,
 } from "lucide-react";
 import { videoUpdateSchema } from "@/db/schema";
@@ -44,6 +47,9 @@ import { VideoPlayer } from "@/modules/videos/ui/components/video-player";
 import Link from "next/link";
 import { snakeCaseToTitle } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { FALLBACK_THUMBNAIL } from "@/modules/videos/constants";
+import { ThumbnailUploadModal } from "../ui/components/thumbnail-upload-modal";
 
 interface FormSectionProps {
   videoId: string;
@@ -68,6 +74,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
   const [categories] = trpc.categories.getMany.useSuspenseQuery();
   const router = useRouter();
   const utils = trpc.useUtils();
+  const [thumbnailModalOpen, setThumbnailModalOpen] = useState(false);
 
   const update = trpc.videos.update.useMutation({
     onSuccess: () => {
@@ -85,6 +92,17 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
       utils.studio.getMany.invalidate();
       toast.success("Video removed");
       router.push(`/studio`);
+    },
+    onError: (err) => {
+      toast.error("Something went wrong");
+    },
+  });
+
+  const restoreThumbnail = trpc.videos.restoreThumbnail.useMutation({
+    onSuccess: () => {
+      utils.studio.getOne.invalidate({ id: videoId });
+      utils.studio.getMany.invalidate();
+      toast.success("Thumbnail restored");
     },
     onError: (err) => {
       toast.error("Something went wrong");
@@ -114,6 +132,11 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
 
   return (
     <>
+      <ThumbnailUploadModal
+        open={thumbnailModalOpen}
+        onOpenChange={setThumbnailModalOpen}
+        videoId={videoId}
+      />
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="flex items-center justify-between mb-4">
@@ -191,6 +214,55 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
 
               {/* Add the thumbnail field here */}
               <FormField
+                name="thumbnailUrl"
+                control={form.control}
+                render={() => (
+                  <FormItem>
+                    <FormLabel>Thumbnail</FormLabel>
+                    <FormControl>
+                      <div className="p-0.5 border border-dashed border-neutral-400 relative h-[84px] w-[153px] group">
+                        <Image
+                          fill
+                          alt="Thumbnail"
+                          src={video.thumbnailUrl || FALLBACK_THUMBNAIL}
+                          className="object-cover"
+                        />
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              type="button"
+                              size={"icon"}
+                              className="bg-black/50 hover:bg-black/50 absolute top-1 right-1 rounded-full opacity-100 md:opacity-0 group-hover:opacity-100 duration-300 size-7"
+                            >
+                              <MoreVerticalIcon className="text-white" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" side="right">
+                            <DropdownMenuItem
+                              onClick={() => setThumbnailModalOpen(true)}
+                            >
+                              <ImagePlusIcon className="size-4 mr-1" /> Change
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <SparklesIcon className="size-4 mr-1" /> AI
+                              Generated
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                restoreThumbnail.mutate({ id: videoId })
+                              }
+                            >
+                              <RotateCcwIcon className="size-4 mr-1" /> Restore
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
                 name="categoryId"
                 control={form.control}
                 render={({ field }) => (
@@ -218,6 +290,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
                   </FormItem>
                 )}
               />
+              <div className="mb-2" />
             </div>
             <div className="flex flex-col gap-y-8 lg:col-span-2">
               <div className="flex flex-col gap-4 rounded-xl overflow-hidden h-fit bg-[#f9f9f9]">
@@ -236,7 +309,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
                       <div className="flex items-center gap-x-2">
                         <Link href={`/videos/${video.id}`}>
                           <p className="line-clamp-1 text-sm text-blue-500">
-                            https://localhost:123
+                            {fullUrl}
                           </p>
                         </Link>
 
@@ -314,7 +387,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
                 )}
               />
 
-              <div className="mb-1"></div>
+              <div className="mb-1" />
             </div>
           </div>
         </form>
