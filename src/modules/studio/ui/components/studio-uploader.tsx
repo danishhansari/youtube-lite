@@ -1,4 +1,3 @@
-import { ResponsiveModal } from "@/components/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { VIDEO_UPLOADER } from "@/constants";
 import MuxUploader, {
