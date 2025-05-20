@@ -52,6 +52,7 @@ import Image from "next/image";
 import { FALLBACK_THUMBNAIL } from "@/modules/videos/constants";
 import { ThumbnailUploadModal } from "../ui/components/thumbnail-upload-modal";
 import { TRPCClientErrorLike } from "@trpc/react-query";
+import { AppRouter } from "@/trpc/routers/_app";
 
 interface FormSectionProps {
   videoId: string;
@@ -84,7 +85,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
       utils.studio.getOne.invalidate({ id: videoId });
       toast.success("Information updated");
     },
-    onError: (err: TRPCClientErrorLike<any>) => {
+    onError: (err: TRPCClientErrorLike<AppRouter>) => {
       console.error(err);
       toast.error("Something went wrong");
     },
@@ -96,7 +97,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
       toast.success("Video removed");
       router.push(`/studio`);
     },
-    onError: (err: TRPCClientErrorLike<any>) => {
+    onError: (err: TRPCClientErrorLike<AppRouter>) => {
       console.error(err);
       toast.error("Something went wrong");
     },
@@ -108,7 +109,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
         description: "This may take some time",
       });
     },
-    onError: (err: TRPCClientErrorLike<any>) => {
+    onError: (err: TRPCClientErrorLike<AppRouter>) => {
       console.error(err);
       toast.error("Something went wrong");
     },
@@ -120,7 +121,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
         description: "This may take some time",
       });
     },
-    onError: (err: TRPCClientErrorLike<any>) => {
+    onError: (err: TRPCClientErrorLike<AppRouter>) => {
       console.error(err);
       toast.error("Something went wrong");
     },
@@ -132,7 +133,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
         description: "This may take some time",
       });
     },
-    onError: (err: TRPCClientErrorLike<any>) => {
+    onError: (err: TRPCClientErrorLike<AppRouter>) => {
       console.error(err);
       toast.error("Something went wrong");
     },
@@ -144,7 +145,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
       utils.studio.getMany.invalidate();
       toast.success("Thumbnail restored");
     },
-    onError: (err: TRPCClientErrorLike<any>) => {
+    onError: (err: TRPCClientErrorLike<AppRouter>) => {
       console.error(err);
       toast.error("Something went wrong");
     },
