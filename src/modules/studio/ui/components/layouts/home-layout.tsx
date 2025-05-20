@@ -1,6 +1,6 @@
 import { HomeNavbar } from "@/modules/home/ui/components/home-navbar";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { HomeSidebar } from "../studio-sidebar";
+import { HomeSidebar } from "@/modules/home/ui/components/home-sidebar";
 
 interface HomeLayoutProps {
   children: React.ReactNode;
