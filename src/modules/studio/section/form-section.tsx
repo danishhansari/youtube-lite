@@ -85,6 +85,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
       toast.success("Information updated");
     },
     onError: (err: TRPCClientErrorLike<any>) => {
+      console.error(err);
       toast.error("Something went wrong");
     },
   });
@@ -96,6 +97,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
       router.push(`/studio`);
     },
     onError: (err: TRPCClientErrorLike<any>) => {
+      console.error(err);
       toast.error("Something went wrong");
     },
   });
@@ -107,6 +109,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
       });
     },
     onError: (err: TRPCClientErrorLike<any>) => {
+      console.error(err);
       toast.error("Something went wrong");
     },
   });
@@ -118,6 +121,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
       });
     },
     onError: (err: TRPCClientErrorLike<any>) => {
+      console.error(err);
       toast.error("Something went wrong");
     },
   });
@@ -129,6 +133,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
       });
     },
     onError: (err: TRPCClientErrorLike<any>) => {
+      console.error(err);
       toast.error("Something went wrong");
     },
   });
@@ -140,6 +145,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
       toast.success("Thumbnail restored");
     },
     onError: (err: TRPCClientErrorLike<any>) => {
+      console.error(err);
       toast.error("Something went wrong");
     },
   });
