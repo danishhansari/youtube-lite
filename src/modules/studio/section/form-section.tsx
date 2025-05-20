@@ -160,7 +160,8 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
     await update.mutate(data);
   };
 
-  const fullUrl = `${process.env.DEPLOYMENT_URL!}/videos/${videoId}`;
+  const fullUrl = `${process.env
+    .NEXT_PUBLIC_DEPLOYMENT_URL!}/videos/${videoId}`;
 
   const [isCopied, setIsCopied] = useState(false);
 
