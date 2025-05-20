@@ -161,7 +161,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
   };
 
   const fullUrl = `${
-    process.env.VERCEL_URL || "http://localhost:3000"
+    process.env.VERCEL_URL! || "http://localhost:3000"
   }/videos/${videoId}`;
 
   const [isCopied, setIsCopied] = useState(false);
