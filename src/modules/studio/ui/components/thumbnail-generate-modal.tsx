@@ -41,11 +41,13 @@ export const ThumbnailGenerateModal = ({
     },
   });
 
-  const generateThumbnail = trpc.videos.generateThumbnail.useMutation({
+  const generateThumbnail = trpc.studio.generateThumbnail.useMutation({
     onSuccess: () => {
       toast.success("Background job started", {
         description: "This may take some time",
       });
+      onOpenChange(false);
+      form.reset();
     },
     onError: (err: TRPCClientErrorLike<AppRouter>) => {
       console.error(err);

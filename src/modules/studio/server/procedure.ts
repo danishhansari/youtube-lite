@@ -1,74 +1,187 @@
 import { db } from "@/db";
-import { videos } from "@/db/schema";
+import { videos, videoUpdateSchema } from "@/db/schema";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { eq, and, or, lt, desc } from "drizzle-orm";
 import { z } from "zod";
+import { UTApi } from "uploadthing/server";
+import { mux } from "@/lib/mux";
+import { workflow } from "@/lib/workflow";
 
 export const studioRouter = createTRPCRouter({
-  getOne: protectedProcedure
+  generateTitle: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .query(async ({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
       const { id: userId } = ctx.user;
-      const { id } = input;
 
-      const [video] = await db
+      const { workflowRunId } = await workflow.trigger({
+        url: `${process.env.UPSTASH_WORKFLOW_URL}/api/videos/workflows/title`,
+        body: { userId, videoId: input.id },
+        retries: 3,
+      });
+
+      return workflowRunId;
+    }),
+  generateDescription: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const { id: userId } = ctx.user;
+
+      const { workflowRunId } = await workflow.trigger({
+        url: `${process.env.UPSTASH_WORKFLOW_URL}/api/videos/workflows/description`,
+        body: { userId, videoId: input.id },
+        retries: 3,
+      });
+
+      return workflowRunId;
+    }),
+  generateThumbnail: protectedProcedure
+    .input(z.object({ id: z.string().uuid(), prompt: z.string().min(10) }))
+    .mutation(async ({ ctx, input }) => {
+      const { id: userId } = ctx.user;
+
+      const { workflowRunId } = await workflow.trigger({
+        url: `${process.env.UPSTASH_WORKFLOW_URL}/api/videos/workflows/thumbnail`,
+        body: { userId, videoId: input.id, prompt: input.prompt },
+        retries: 3,
+      });
+
+      return workflowRunId;
+    }),
+  restoreThumbnail: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const { id: userId } = ctx.user;
+
+      const [existingVideo] = await db
         .select()
         .from(videos)
-        .where(and(eq(videos.id, id), eq(videos.userId, userId)));
+        .where(and(eq(videos.id, input.id), eq(videos.userId, userId)));
 
-      if (!video) {
+      if (!existingVideo) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      return video;
+      if (existingVideo.thumbnailKey) {
+        const utapi = new UTApi();
+
+        await utapi.deleteFiles(existingVideo.thumbnailKey);
+        await db
+          .update(videos)
+          .set({ thumbnailKey: null, thumbnailUrl: null })
+          .where(and(eq(videos.id, input.id), eq(videos.userId, userId)));
+      }
+
+      if (!existingVideo.muxPlaybackId) {
+        throw new TRPCError({ code: "BAD_REQUEST" });
+      }
+
+      const utapi = new UTApi();
+
+      const tempThumbnailUrl = `https://image.mux.com/${existingVideo.muxPlaybackId}/thumbnail.jpg`;
+      const uploadedThumbnail = await utapi.uploadFilesFromUrl(
+        tempThumbnailUrl
+      );
+
+      if (!uploadedThumbnail.data) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      }
+
+      const { key: thumbnailKey, ufsUrl: thumbnailUrl } =
+        uploadedThumbnail.data;
+
+      const [updatedVideo] = await db
+        .update(videos)
+        .set({
+          thumbnailUrl,
+          thumbnailKey,
+        })
+        .where(and(eq(videos.id, input.id), eq(videos.userId, userId)))
+        .returning();
+
+      return updatedVideo;
     }),
-  getMany: protectedProcedure
-    .input(
-      z.object({
-        cursor: z
-          .object({
-            id: z.string().uuid(),
-            updatedAt: z.date(),
-          })
-          .nullish(),
-        limit: z.number().min(1).max(100),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const { cursor, limit } = input;
+
+  remove: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
       const { id: userId } = ctx.user;
-      const data = await db
-        .select()
-        .from(videos)
-        .where(
-          and(
-            eq(videos.userId, userId),
-            cursor
-              ? or(
-                  lt(videos.updatedAt, cursor.updatedAt),
-                  and(
-                    eq(videos.updatedAt, cursor.updatedAt),
-                    lt(videos.id, cursor.id)
-                  )
-                )
-              : undefined
-          )
-        )
-        .orderBy(desc(videos.updatedAt), desc(videos.id))
-        .limit(limit + 1);
 
-      const hasMore = data.length > limit;
+      const [removedVideo] = await db
+        .delete(videos)
+        .where(and(eq(videos.id, input.id), eq(videos.userId, userId)))
+        .returning();
 
-      const items = hasMore ? data.slice(0, -1) : data;
+      if (!removedVideo) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
 
-      const lastItem = items[items.length - 1];
-      const nextCursor = hasMore
-        ? {
-            id: lastItem.id,
-            updatedAt: lastItem.updatedAt,
-          }
-        : null;
-      return { items, nextCursor };
+      if (removedVideo.muxAssetId) {
+        try {
+          await mux.video.assets.delete(removedVideo.muxAssetId);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      return removedVideo;
     }),
+
+  update: protectedProcedure
+    .input(videoUpdateSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { id: userId } = ctx.user;
+      if (!input.id) {
+        throw new TRPCError({ code: "BAD_REQUEST" });
+      }
+
+      const [updatedVideo] = await db
+        .update(videos)
+        .set({
+          title: input.title,
+          description: input.description,
+          categoryId: input.categoryId,
+          visibility: input.visibility,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(videos.id, input.id), eq(videos.userId, userId)))
+        .returning();
+
+      if (!updatedVideo) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      return updatedVideo;
+    }),
+  create: protectedProcedure.mutation(async ({ ctx }) => {
+    const { id: userId } = ctx.user;
+
+    const upload = await mux.video.uploads.create({
+      new_asset_settings: {
+        passthrough: userId,
+        playback_policies: ["public"],
+        input: [
+          {
+            generated_subtitles: [{ language_code: "en", name: "English" }],
+          },
+        ],
+      },
+      cors_origin: "*", // TODO: In production, set your own url
+    });
+
+    console.log({ upload });
+    console.log({ upload: upload.url });
+
+    const [video] = await db
+      .insert(videos)
+      .values({
+        userId,
+        title: "Untitled",
+        muxStatus: "waiting",
+        muxUploadId: upload.id,
+      })
+      .returning();
+
+    return { video: video, url: upload.url };
+  }),
 });

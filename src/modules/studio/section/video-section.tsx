@@ -88,7 +88,7 @@ export const VideoSectionSkeleton = () => {
 };
 
 export const VideoSectionSuspense = () => {
-  const [videos, query] = trpc.studio.getMany.useSuspenseInfiniteQuery(
+  const [videos, query] = trpc.videos.getMany.useSuspenseInfiniteQuery(
     {
       limit: DEFAULT_LIMIT,
     },

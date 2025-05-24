@@ -74,7 +74,7 @@ const FormSectionSkeleton = () => {
 };
 
 const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
-  const [video] = trpc.studio.getOne.useSuspenseQuery({ id: videoId });
+  const [video] = trpc.videos.getOne.useSuspenseQuery({ id: videoId });
   const [categories] = trpc.categories.getMany.useSuspenseQuery();
   const router = useRouter();
   const utils = trpc.useUtils();
@@ -82,10 +82,10 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
 
   const [thumbnailGenerateOpen, setThumbnailGenerateOpen] = useState(false);
 
-  const update = trpc.videos.update.useMutation({
+  const update = trpc.studio.update.useMutation({
     onSuccess: () => {
-      utils.studio.getMany.invalidate();
-      utils.studio.getOne.invalidate({ id: videoId });
+      utils.videos.getMany.invalidate();
+      utils.videos.getOne.invalidate({ id: videoId });
       toast.success("Information updated");
     },
     onError: (err: TRPCClientErrorLike<AppRouter>) => {
@@ -94,9 +94,9 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
     },
   });
 
-  const remove = trpc.videos.remove.useMutation({
+  const remove = trpc.studio.remove.useMutation({
     onSuccess: () => {
-      utils.studio.getMany.invalidate();
+      utils.videos.getMany.invalidate();
       toast.success("Video removed");
       router.push(`/studio`);
     },
@@ -105,7 +105,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
       toast.error("Something went wrong");
     },
   });
-  const generateTitle = trpc.videos.generateTitle.useMutation({
+  const generateTitle = trpc.studio.generateTitle.useMutation({
     onSuccess: () => {
       toast.success("Background job started", {
         description: "This may take some time",
@@ -117,7 +117,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
     },
   });
 
-  const generateDescription = trpc.videos.generateDescription.useMutation({
+  const generateDescription = trpc.studio.generateDescription.useMutation({
     onSuccess: () => {
       toast.success("Background job started", {
         description: "This may take some time",
@@ -129,10 +129,10 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
     },
   });
 
-  const restoreThumbnail = trpc.videos.restoreThumbnail.useMutation({
+  const restoreThumbnail = trpc.studio.restoreThumbnail.useMutation({
     onSuccess: () => {
-      utils.studio.getOne.invalidate({ id: videoId });
-      utils.studio.getMany.invalidate();
+      utils.videos.getOne.invalidate({ id: videoId });
+      utils.videos.getMany.invalidate();
       toast.success("Thumbnail restored");
     },
     onError: (err: TRPCClientErrorLike<AppRouter>) => {

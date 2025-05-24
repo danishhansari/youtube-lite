@@ -11,10 +11,10 @@ import { useRouter } from "next/navigation";
 export const StudioUploadModal = () => {
   const router = useRouter();
   const utils = trpc.useUtils();
-  const create = trpc.videos.create.useMutation({
+  const create = trpc.studio.create.useMutation({
     onSuccess: () => {
       toast.success("Video uploaded");
-      utils.studio.getMany.invalidate();
+      utils.videos.getMany.invalidate();
     },
     onError: (error) => {
       toast.error(error.message);
